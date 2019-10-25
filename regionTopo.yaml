@@ -1,0 +1,22 @@
+measurement:
+  - regionIdx: 0
+    mea: 1.5
+#   - regionIdx: 1
+#     mea: 0.8
+#   - regionIdx: 2
+#     mea: 5.3
+#   - regionIdx: 3
+#     mea: 1.8
+#   - regionIdx: 4
+#     mea: 3.6
+topology:
+  - regionIdx: 0
+    neighbor: 
+#   - regionIdx: 1
+#     neighbor: [0,3]
+#   - regionIdx: 2
+#     neighbor: [0,3]
+#   - regionIdx: 3
+#     neighbor: [1,2]
+#   - regionIdx: 4
+#     neighbor: [1,3]

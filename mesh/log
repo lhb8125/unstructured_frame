@@ -1,0 +1,82 @@
+000000000000030e t global constructors keyed to _ZN7Section14compareEleTypeEii
+                 U _Unwind_Resume
+0000000000000140 T faceNodesForEle(int*, int, int)
+00000000000002ce t __static_initialization_and_destruction_0(int, int)
+0000000000000000 T Section::compareEleType(int, int)
+00000000000000d8 T Section::facesNumForEle(int)
+0000000000000070 T Section::nodesNumForEle(int)
+0000000000000000 W __gnu_cxx::new_allocator<int>::deallocate(int*, unsigned long)
+0000000000000000 W __gnu_cxx::new_allocator<int>::destroy(int*)
+0000000000000000 W __gnu_cxx::new_allocator<int>::allocate(unsigned long, void const*)
+0000000000000000 W __gnu_cxx::new_allocator<int>::construct(int*, int const&)
+0000000000000000 W __gnu_cxx::new_allocator<int>::new_allocator()
+0000000000000000 W __gnu_cxx::new_allocator<int>::new_allocator()
+0000000000000000 W __gnu_cxx::new_allocator<int>::~new_allocator()
+0000000000000000 W __gnu_cxx::new_allocator<int>::~new_allocator()
+0000000000000000 W __gnu_cxx::__normal_iterator<int*, std::vector<int, std::allocator<int> > >::__normal_iterator(int* const&)
+0000000000000000 W __gnu_cxx::__normal_iterator<int*, std::vector<int, std::allocator<int> > >::__normal_iterator(int* const&)
+0000000000000000 W __gnu_cxx::__normal_iterator<int*, std::vector<int, std::allocator<int> > >::difference_type __gnu_cxx::operator-<int*, std::vector<int, std::allocator<int> > >(__gnu_cxx::__normal_iterator<int*, std::vector<int, std::allocator<int> > > const&, __gnu_cxx::__normal_iterator<int*, std::vector<int, std::allocator<int> > > const&)
+0000000000000000 W __gnu_cxx::new_allocator<int>::max_size() const
+0000000000000000 W __gnu_cxx::__normal_iterator<int*, std::vector<int, std::allocator<int> > >::base() const
+0000000000000000 W __gnu_cxx::__normal_iterator<int*, std::vector<int, std::allocator<int> > >::operator*() const
+0000000000000000 W std::_Vector_base<int, std::allocator<int> >::_M_get_Tp_allocator() const
+0000000000000000 W std::vector<int, std::allocator<int> >::_M_check_len(unsigned long, char const*) const
+0000000000000000 W std::vector<int, std::allocator<int> >::size() const
+0000000000000000 W std::vector<int, std::allocator<int> >::max_size() const
+0000000000000000 W std::allocator<int>::allocator()
+0000000000000000 W std::allocator<int>::allocator()
+0000000000000000 W std::allocator<int>::~allocator()
+0000000000000000 W std::allocator<int>::~allocator()
+0000000000000000 W int* std::__copy_move<false, true, std::random_access_iterator_tag>::__copy_m<int>(int const*, int const*, int*)
+0000000000000000 W void std::_Destroy_aux<true>::__destroy<int*>(int*, int*)
+0000000000000000 W std::_Vector_base<int, std::allocator<int> >::_M_allocate(unsigned long)
+0000000000000000 W std::_Vector_base<int, std::allocator<int> >::_Vector_impl::_Vector_impl()
+0000000000000000 W std::_Vector_base<int, std::allocator<int> >::_Vector_impl::_Vector_impl()
+0000000000000000 W std::_Vector_base<int, std::allocator<int> >::_Vector_impl::~_Vector_impl()
+0000000000000000 W std::_Vector_base<int, std::allocator<int> >::_Vector_impl::~_Vector_impl()
+0000000000000000 W std::_Vector_base<int, std::allocator<int> >::_M_deallocate(int*, unsigned long)
+0000000000000000 W std::_Vector_base<int, std::allocator<int> >::_M_get_Tp_allocator()
+0000000000000000 W std::_Vector_base<int, std::allocator<int> >::_Vector_base()
+0000000000000000 W std::_Vector_base<int, std::allocator<int> >::_Vector_base()
+0000000000000000 W std::_Vector_base<int, std::allocator<int> >::~_Vector_base()
+0000000000000000 W std::_Vector_base<int, std::allocator<int> >::~_Vector_base()
+0000000000000000 W std::__miter_base<int*, false>::__b(int*)
+0000000000000000 W std::__niter_base<int*, false>::__b(int*)
+0000000000000000 W int* std::__copy_move_backward<false, true, std::random_access_iterator_tag>::__copy_move_b<int>(int const*, int const*, int*)
+0000000000000000 W int* std::__uninitialized_copy<true>::uninitialized_copy<int*, int*>(int*, int*, int*)
+0000000000000000 W std::vector<int, std::allocator<int> >::_M_insert_aux(__gnu_cxx::__normal_iterator<int*, std::vector<int, std::allocator<int> > >, int const&)
+0000000000000000 W std::vector<int, std::allocator<int> >::end()
+0000000000000000 W std::vector<int, std::allocator<int> >::begin()
+0000000000000000 W std::vector<int, std::allocator<int> >::push_back(int const&)
+0000000000000000 W std::vector<int, std::allocator<int> >::vector()
+0000000000000000 W std::vector<int, std::allocator<int> >::vector()
+0000000000000000 W std::vector<int, std::allocator<int> >::~vector()
+0000000000000000 W std::vector<int, std::allocator<int> >::~vector()
+                 U std::ios_base::Init::Init()
+                 U std::ios_base::Init::~Init()
+0000000000000000 W int* std::__copy_move_a<false, int*, int*>(int*, int*, int*)
+0000000000000000 W int* std::copy_backward<int*, int*>(int*, int*, int*)
+0000000000000000 W int* std::__copy_move_a2<false, int*, int*>(int*, int*, int*)
+                 U std::__throw_bad_alloc()
+0000000000000000 W int* std::uninitialized_copy<int*, int*>(int*, int*, int*)
+                 U std::__throw_length_error(char const*)
+0000000000000000 W int* std::__copy_move_backward_a<false, int*, int*>(int*, int*, int*)
+0000000000000000 W int* std::__uninitialized_copy_a<int*, int*, int>(int*, int*, int*, std::allocator<int>&)
+0000000000000000 W int* std::__uninitialized_move_a<int*, int*, std::allocator<int> >(int*, int*, int*, std::allocator<int>&)
+0000000000000000 W int* std::__copy_move_backward_a2<false, int*, int*>(int*, int*, int*)
+0000000000000000 W unsigned long const& std::max<unsigned long>(unsigned long const&, unsigned long const&)
+0000000000000000 W int* std::copy<int*, int*>(int*, int*, int*)
+0000000000000000 W void std::_Destroy<int*>(int*, int*)
+0000000000000000 W void std::_Destroy<int*, int>(int*, int*, std::allocator<int>&)
+0000000000000000 b std::__ioinit
+                 U operator delete(void*)
+                 U operator new(unsigned long)
+0000000000000000 W operator new(unsigned long, void*)
+                 U __cxa_atexit
+                 U __cxa_begin_catch
+                 U __cxa_end_catch
+                 U __cxa_rethrow
+                 U __dso_handle
+                 U __gxx_personality_v0
+                 U memmove
+                 U puts

@@ -1,0 +1,33 @@
+domain1:
+  equation:
+    - name: p
+      solver: PCG
+      preconditioner: DIC
+    - name: U
+      solver: PBiCG
+      preconditioner: DILU
+  region:
+    - name: region1
+      path: "./data/dom1_reg1.cgns"
+      scheme:
+        - name: ddt
+          scheme: steadyState
+        - name: grad
+          scheme: Gauss
+    - name: region2
+      path: "./data/dom1_reg2.cgns"
+      scheme:
+        - name: ddt
+          scheme:
+          - steadyState
+        - name: grad
+          scheme:
+          - Gauss
+          - linear
+  turbulent:
+    model: LES
+  solve:
+    deltaT: 1e-6
+    startT: 0
+    endT: 100
+    writeInterval: 20

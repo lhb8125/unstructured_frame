@@ -1,0 +1,28 @@
+##set -x
+#
+#INCLUDE=-I/home/export/online1/systest/swrh/lhb/software/CGNS-3.4.0/lib/ \
+#        -I/home/export/online1/systest/swrh/lhb/software/YAML/include/ \
+#        -I./ \
+#        -I./loadBalancer/
+#
+#LIB=-L/home/export/online1/systest/swrh/lhb/software/YAML/lib
+#
+#CXXOBJS=loadBalancer/loadBalancer.o test.o
+#
+#EXE=test
+#
+#${test}: ${CXXOBJS}
+#  g++ -o ${EXE} $^ ${INCLUDE} ${LIB} -lyaml-cpp
+#
+#${CXXOBJS}:%.o:%.c
+#  g++ -c $< -o $@
+#
+##g++ -c loadBalancer/loadBalancer.cpp ${INCLUDE} -o loadBalancer/loadBalancer.o
+##g++ -c test/test.cpp -I./ -I./loadBalancer/ ${INCLUDE} -o test.o
+##g++ -o test.out test.o loadBalancer/loadBalancer.o ${INCLUDE} ${LIB} -lyaml-cpp
+##./test.out
+rm -f ./test.out
+make
+#/home/export/online1/systest/swrh/lhb/software/OpenMPI/bin/mpirun -n 4 ./test.out
+#/home/export/online1/systest/swrh/lhb/software/MPICH/bin/mpirun -n 4 ./test.out
+mpiexec -np 4 ./test.out
