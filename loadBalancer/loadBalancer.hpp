@@ -67,7 +67,7 @@ public:
 	* @brief Third Level load balance with parmetis
 	* @param reg the collection of regions owned by this processor
 	*/
-	void LoadBalancer_3(Array<Region>& reg);
+	void LoadBalancer_3(Array<Region>* reg);
 
 	ArrayArray<Label>& getProcId() {return this->procId_;}
 	ArrayArray<Scalar>& getProcLoad() {return this->procLoad_;}

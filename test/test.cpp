@@ -67,6 +67,9 @@ int main(int argc, char** argv)
 	// }
 
 	/// read CGNS file
+	Array<Region> regs;
+
+	/// only one region for test.
 	Region reg;
 	// reg.getMesh().readMesh("data/40W.cgns");
 	// printf("writing HDF5 cgns file: ......\n");
@@ -74,12 +77,15 @@ int main(int argc, char** argv)
 	printf("reading HDF5 cgns file: ......\n");
 	// reg.getMesh().initMesh("data/hdf5.cgns");
 	// MPI_Barrier(MPI_COMM_WORLD);
-	reg.getMesh().readMesh("data/yf17_hdf5.cgns");
+	reg.getMesh().readMesh("data/hdf5.cgns");
 	MPI_Barrier(MPI_COMM_WORLD);
-	// sleep(3);
-	// reg.getMesh().initMesh("data/hdf5.cgns");
-	reg.getMesh().writeMesh("data/result.cgns");
-	// hdf5ToAdf("data/40W.cgns", "data/40W_adf.cgns");
+	// reg.getMesh().writeMesh("data/result.cgns");
+	// MPI_Barrier(MPI_COMM_WORLD);
+
+	// regs.push_back(reg);
+
+	/// load balance in region
+	// lb->LoadBalancer_3(&regs);
 
 	MPI_Finalize();
 	return 0;

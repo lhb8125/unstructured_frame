@@ -8,6 +8,7 @@
 */
 #include <cstdio>
 #include <assert.h>
+#include "mpi.h"
 #include "topology.hpp"
 #include "section.hpp"
 
@@ -26,23 +27,27 @@ Topology::~Topology()
 Topology::Topology(Array<Section>& secs)
 {
 	Label secNum = secs.size();
+	int rank;
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
 	/// record the type of cells
+	cellNum_ = 0;
 	for (int i = 0; i < secNum; ++i)
 	{
+		cellNum_ += secs[i].num;
 		for (int j = 0; j < secs[i].num; ++j)
 		{
+			// printf("%d, %d, %d\n", j, secs[i].num, secs[i].type);
 			cellType_.push_back(secs[i].type);
 		}
 	}
 
 	/// construct the topology array: cell2Node
-	cell2Node_.startIdx = new Label[secNum+1];
+	cell2Node_.startIdx = new Label[cellNum_+1];
 	cell2Node_.startIdx[0] = 0;
 	Label k=0;
 	for (int i = 0; i < secNum; ++i)
 	{
-		cellNum_ += secs[i].num;
 		for (int j = 0; j < secs[i].num; ++j)
 		{
 			cell2Node_.startIdx[k+1]
@@ -54,32 +59,65 @@ Topology::Topology(Array<Section>& secs)
 	k=0;
 	for (int i = 0; i < secNum; ++i)
 	{
+		int l = 0;
 		for (int j = 0; j < secs[i].num; ++j)
 		{
 			memcpy(&cell2Node_.data[cell2Node_.startIdx[k]],
-				&secs[i].conn[j],
+				&secs[i].conn[l],
 				Section::nodesNumForEle(secs[i].type)*sizeof(Label));
 			k++;
+			l += Section::nodesNumForEle(secs[i].type);
 		}
 	}
 
+// for (int i = 0; i < cellNum_; ++i)
+// {
+// 	for (int j = cell2Node_.startIdx[i]; j < cell2Node_.startIdx[i+1]; ++j)
+// 	{
+// 		printf("%d, ", cell2Node_.data[j]);
+// 	}
+// 	printf("\n");
+// }
 	/// construct the topology array: face2Node
+	// Array<Array<Label> > faces2NodesBndTmp;
 	Array<Array<Label> > faces2NodesTmp;
 	for (int i = 0; i < cellNum_; ++i)
 	{
 		Label faceNumTmp = Section::facesNumForEle(cellType_[i]);
+		// if(rank==0) printf("cellIdx: %d, faceNumTmp: %d, cellType: %d\n", i, faceNumTmp, cellType_[i]);
+		// if the face num equals to 0, then the cell is considered as face.
+		// if(faceNumTmp==0)
+		// {
+		// 	Array<Label> faceEleTmp;
+		// 	for (int j = cell2Node_.startIdx[i]; j < cell2Node_.startIdx[i+1]; ++j)
+		// 	{
+		// 		faceEleTmp.push_back(cell2Node_.data[j]);
+		// 	}
+		// 	faces2NodesBndTmp.push_back(faceEleTmp);
+		// }
 		for (int j = 0; j < faceNumTmp; ++j)
 		{
 			faces2NodesTmp.push_back(
 				Section::faceNodesForEle(
 					&cell2Node_.data[cell2Node_.startIdx[i]], cellType_[i], j));
 		}
+		// assert(faceNumTmp==4);
 	}
-	/// eliminate the duplicate faces
-	/// and divide the internal faces and boundary faces
-	faceNum_b_ = filterArray(faces2NodesTmp);
-	faceNum_   = faces2NodesTmp.size();
-	faceNum_i_ = faceNum_-faceNum_b_;
+	/// eliminate the duplicate faces and seperate the boundary face and internal face
+	// faceNum_b_  = filterArray(faces2NodesBndTmp);
+	Label *faceNum = filterArray(faces2NodesTmp);
+	faceNum_ = faceNum[0]+faceNum[1];
+	faceNum_b_ = faceNum[0];
+	faceNum_i_ = faceNum[1];
+// for (int i = 0; i < faces2NodesTmp.size(); ++i)
+// {
+// 	printf("The %dth face: ", i);
+// 	for (int j = 0; j < faces2NodesTmp[i].size(); ++j)
+// 	{
+// 		printf("%d, ", faces2NodesTmp[i][j]);
+// 	}
+// 	printf("\n");
+// }
 	face2Node_ = transformArray(faces2NodesTmp);
 
 	/// construct the topology array: cell2Face
@@ -94,31 +132,52 @@ Topology::Topology(Array<Section>& secs)
 			Array<Label> face2NodesTmp
 				= Section::faceNodesForEle(
 					&cell2Node_.data[cell2Node_.startIdx[i]], cellType_[i], j);
+			sort(face2NodesTmp.begin(), face2NodesTmp.end());
 			/// find the index of face matching this cell
-			bool ltmp = true;
+			bool findFace = false;
+			// printf("faceNum_: %d\n", faceNum_);
 			for (int k = 0; k < faceNum_; ++k)
 			{
+				// printf("The %dth face\n", k);
 				if(compareArray(faces2NodesTmp[k], face2NodesTmp))
 				{
-					ltmp = false;
+					findFace = true;
 					faceIdx = k;
+					// if(rank==0) printf("The matching face index of element %d is %d\n", i, faceIdx);
 				}
 			}
-			if(ltmp) Terminate("find face matching this cell", ltmp);
+			if(!findFace) 
+			{
+				printf("%d\n", i);
+				Terminate("find faces of elements", "can not find the matching faces");
+			}
 			cell2FacesTmp.push_back(faceIdx);
 		}
 		cells2FacesTmp.push_back(cell2FacesTmp);
 	}
 	cell2Face_ = transformArray(cells2FacesTmp);
+// for (int i = 0; i < cell2Face_.num; ++i)
+// {
+// 	printf("The %dth cell: ", i);
+// 	for (int j = cell2Face_.startIdx[i]; j < cell2Face_.startIdx[i+1]; ++j)
+// 	{
+// 		printf("%d, ", cell2Face_.data[j]);
+// 	}
+// 	printf("\n");
+// }
 
 	/// construct the topology array: face2Cell
-	face2Cell_.startIdx = new Label[faceNum_i_+1];
-	face2Cell_.num = faceNum_i_;
-	face2Cell_.data = new Label[faceNum_i_*2];
+	face2Cell_.startIdx = new Label[faceNum_+1];
+	face2Cell_.num = faceNum_;
+	face2Cell_.data = new Label[faceNum_i_*2+faceNum_b_];
 	face2Cell_.startIdx[0] = 0;
-	Label *bonus = new Label[faceNum_i_];
-	for (int i = 0; i < faceNum_i_; ++i) { bonus[i]=0; }
-	for (int i = 0; i < faceNum_i_; ++i)
+	Label *bonus = new Label[faceNum_];
+	for (int i = 0; i < faceNum_; ++i) { bonus[i]=0; }
+	for (int i = 0; i < faceNum_b_; ++i)
+	{
+		face2Cell_.startIdx[i+1] = face2Cell_.startIdx[i]+1;
+	}
+	for (int i = faceNum_b_; i < faceNum_b_+faceNum_i_; ++i)
 	{
 		face2Cell_.startIdx[i+1] = face2Cell_.startIdx[i]+2;
 	}
@@ -126,16 +185,34 @@ Topology::Topology(Array<Section>& secs)
 	{
 		for (int j = cell2Face_.startIdx[i]; j < cell2Face_.startIdx[i+1]; ++j)
 		{
-			Label idx = cell2Face_.data[i]-faceNum_b_;
+			Label idx = cell2Face_.data[j];
 			/// if the face is boundary face, then ignore it
-			if(idx<0) continue;
-			face2Cell_.data[(idx-1)*2+bonus[idx]] = i;
+			face2Cell_.data[face2Cell_.startIdx[idx]+bonus[idx]] = i;
 			bonus[idx]++;
 		}
 	}
-	for (int i = 0; i < faceNum_i_; ++i) { assert(bonus[i]==2); }
-	delete[] bonus;
+// for (int i = 0; i < face2Cell_.num; ++i)
+// {
+// 	printf("The %dth face: ", i);
+// 	for (int j = face2Cell_.startIdx[i]; j < face2Cell_.startIdx[i+1]; ++j)
+// 	{
+// 		printf("%d, ", face2Cell_.data[j]);
+// 	}
+// 	printf("\n");
+// }
+	// for (int i = 0; i < faceNum_i_; ++i) { assert(bonus[i]==2); }
+	// delete[] bonus;
 
 	/// construct the topology array: node2Cell
 	
 }
+
+// Label Topology::reorderFace2Node(Array<Array<Label> >& face2NodeTmp, Array<Array<Label> >& face2NodeBndTmp)
+// {
+// 	Array<Array<Label> > result;
+// 	// printf("%d,%d\n", face2NodeTmp.size(), face2NodeBndTmp.size());
+// 	face2NodeTmp.insert(face2NodeTmp.begin(), face2NodeBndTmp.begin(),face2NodeBndTmp.end());
+// 	// printf("%d,%d\n", face2NodeTmp.size(), face2NodeBndTmp.size());
+// 	filterArray(face2NodeTmp);
+// 	// printf("%d,%d\n", face2NodeTmp.size(), face2NodeBndTmp.size());
+// }

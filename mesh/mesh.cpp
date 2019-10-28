@@ -16,7 +16,7 @@
 #include "mesh.hpp"
 #include "cgnslib.h"
 
-#define INTEGER32
+// #define INTEGER32
 
 
 void Mesh::readCGNSFilePar(const char* filePtr)
@@ -67,19 +67,19 @@ void Mesh::readCGNSFilePar(const char* filePtr)
 	Scalar* x = new Scalar[nnodes];
 	if(cg_coord_info(iFile, iBase, iZone, 1, &dataType, coordName) ||
 		// sizeof(dataType)!=sizeof(Scalar) ||
-        dataType!=RealSingle ||
+        dataType!=RealDouble ||
 		cgp_coord_read_data(iFile, iBase, iZone, 1, &start, &end, x))
 		Terminate("readCoords", cg_get_error());
 	Scalar* y = new Scalar[nnodes];
 	if(cg_coord_info(iFile, iBase, iZone, 2, &dataType, coordName) ||
 		// sizeof(dataType)!=sizeof(Scalar) ||
-        dataType!=RealSingle ||
+        dataType!=RealDouble ||
 		cgp_coord_read_data(iFile, iBase, iZone, 2, &start, &end, y))
 		Terminate("readCoords", cg_get_error());
 	Scalar* z = new Scalar[nnodes];
 	if(cg_coord_info(iFile, iBase, iZone, 3, &dataType, coordName) ||
 		// sizeof(dataType)!=sizeof(Scalar) ||
-        dataType!=RealSingle ||
+        dataType!=RealDouble ||
 		cgp_coord_read_data(iFile, iBase, iZone, 3, &start, &end, z))
 		Terminate("readCoords", cg_get_error());
 	MPI_Barrier(MPI_COMM_WORLD);
@@ -112,9 +112,7 @@ void Mesh::readCGNSFilePar(const char* filePtr)
 			&type, &start, &end, &nBnd, &parentFlag))
 			Terminate("readSectionInfo", cg_get_error());
 		printf("iSec: %d, sectionName: %s, type: %d, start: %d, end: %d, nBnd: %d\n", iSec, secName, type, start, end, nBnd);
-        cgsize_t elementDataSize;
-        cg_ElementDataSize(iFile, iBase,iZone, iSec, &elementDataSize);
-        printf("%d\n", elementDataSize);
+        if(! Section::compareEleType(type, this->meshType_)) continue;
 
     	Section sec;
     	sec.name = new char[20];
@@ -124,7 +122,6 @@ void Mesh::readCGNSFilePar(const char* filePtr)
     	sec.iEnd   = end;
     	sec.nBnd   = nBnd;
 		/// if the section does not match the type of mesh, then ignore it.
-		// if(! Section::compareEleType(type, this->meshType_)) continue;
 		Label secStart = start-1;
 		Label eleNum = end-start+1;
     	int nEles = (eleNum + numProcs - 1) / numProcs;
@@ -166,7 +163,6 @@ void Mesh::readCGNSFilePar(const char* filePtr)
     MPI_Barrier(MPI_COMM_WORLD);
 
     readBoundaryCondition(iFile, iBase, iZone);
-printf("I am rank %d\n", rank);
     MPI_Barrier(MPI_COMM_WORLD);
 
 	if(cgp_close(iFile))
@@ -218,7 +214,6 @@ void Mesh::readBoundaryCondition(int iFile, int iBase, int iZone)
         BCSec.BCElems = new cgsize_t[BCSec.nBCElems];
         if(cg_boco_read(iFile, iBase, iZone, iBoco, BCSec.BCElems, NULL))
             Terminate("readBocoInfo", cg_get_error());
-        printf("I am here\n");
         if(BCSec.ptsetType[0]==PointRange)
             printf("iBoco: %d, name: %s, type: %d, nEles: %d, start: %d, end: %d\n", iBoco, BCSec.name, BCSec.type, BCSec.nBCElems, BCSec.BCElems[0], BCSec.BCElems[1]);
         else if(BCSec.ptsetType[0]==PointList)

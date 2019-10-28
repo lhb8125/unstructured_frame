@@ -11,6 +11,8 @@
 #include <string.h>
 #include "utilities.hpp"
 #include "section.hpp"
+#include "cgnslib.h"
+
 /**
 * @brief Topology information of mesh
 */
@@ -52,9 +54,12 @@ private:
 	/// Connectivity between cells and edges
 	ArrayArray<Label> cell2Edge_;
 	/// type of cells
-	Array<Label> cellType_;
+	Array<ElementType_t> cellType_;
 	/// type of faces
 	Array<Label> faceType_;
+	// /// reorder the face2Node topology to seperate the boundary faces and internal faces
+	// Label reorderFace2Node(Array<Array<Label> >& face2NodeTmp,
+	// 	Array<Array<Label> >& face2NodeBndTmp);
 public:
 	/**
 	* @brief default constructor

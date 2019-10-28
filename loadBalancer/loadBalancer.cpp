@@ -219,42 +219,43 @@ void LoadBalancer::LoadBalancer_2(const Array<Scalar> s, const ArrayArray<Label>
 * @brief Third Level load balance with ParMETIS
 * @param reg the collection of regions owned by this processor
 */
-// void LoadBalancer::LoadBalancer_3(Array<Region>& regs)
-// {
-// 	int regNum = regs.size();
+void LoadBalancer::LoadBalancer_3(Array<Region>* regs)
+{
+	int regNum = regs->size();
 
-// 	for (int i = 0; i < regNum; ++i)
-// 	{
-// 		int regIdx = regs[i].idx_g;
-// 		/// if this region is private for the process
-// 		/// then it need not to be partitioned
-// 		if(procId_.startIdx[regIdx+1]-procId_.startIdx[regIdx]==1) return;
+	for (int i = 0; i < regNum; ++i)
+	{
+		// int regIdx = regs[i].idx_g;
+		/// if this region is private for the process
+		/// then it need not to be partitioned
+		printf("region: %d, procId_start: %d, procId_end: %d\n", i, procId_.startIdx[i], procId_.startIdx[i+1]);
+		if(procId_.startIdx[i+1]-procId_.startIdx[i]==1) return;
 
-// 		/// get parameters of ParMetis: vtxlist, xadj, adjncy
-// 		Label* xadj   = regs[i].getMesh().getTopology().getCell2Cell().startIdx;
-// 		Label* adjncy = regs[i].getMesh().getTopology().getCell2Cell().data;
-// 		Label  cStart = regs[i].getMesh().getCellStart();
-// 		/// gather the start index of cells from other processes
-// 		mpi_collective(vtxlist);
+		// /// get parameters of ParMetis: vtxlist, xadj, adjncy
+		// Label* xadj   = regs[i].getMesh().getTopology().getCell2Cell().startIdx;
+		// Label* adjncy = regs[i].getMesh().getTopology().getCell2Cell().data;
+		// Label  cStart = regs[i].getMesh().getCellStart();
+		// /// gather the start index of cells from other processes
+		// mpi_collective(vtxlist);
 
-// 		Label* vwgt = NULL;
-// 		Label* adjwgt = NULL;
-// 		Label  wgtflag = 0;
-// 		Label  numflag = 0;
-// 		Label  ncon = 1;
-// 		Label  nparts = procId_.startIdx[regIdx+1]-procId_.startIdx[regIdx];
-// 		Label* tpwgts = new Label[ncon*nparts];
-// 		for (int j = 0; j < nparts; ++j)
-// 		{
-// 			tpwgts[j] = procLoad_.data[j+procId_.startIdx[regIdx]];
-// 		}
-// 		Label  ubvec = 1.05;
-// 		Label  options[3] = 0;
-// 		Label  edgecut;
-// 		Label* parts = new Label[regs[i].getMesh().getNodesNum()];
-// 		ParMETIS_V3_PartKway(vtxlist, xadj, adjncy, vwgt, adjwgt, &wgtflag,
-// 			&numflag, &ncon, &nparts, tpwgts, &ubvec, options, &edgecut,
-// 			parts, MPI_COMM_WROLD);
+		// Label* vwgt = NULL;
+		// Label* adjwgt = NULL;
+		// Label  wgtflag = 0;
+		// Label  numflag = 0;
+		// Label  ncon = 1;
+		// Label  nparts = procId_.startIdx[regIdx+1]-procId_.startIdx[regIdx];
+		// Label* tpwgts = new Label[ncon*nparts];
+		// for (int j = 0; j < nparts; ++j)
+		// {
+		// 	tpwgts[j] = procLoad_.data[j+procId_.startIdx[regIdx]];
+		// }
+		// Label  ubvec = 1.05;
+		// Label  options[3] = 0;
+		// Label  edgecut;
+		// Label* parts = new Label[regs[i].getMesh().getNodesNum()];
+		// ParMETIS_V3_PartKway(vtxlist, xadj, adjncy, vwgt, adjwgt, &wgtflag,
+		// 	&numflag, &ncon, &nparts, tpwgts, &ubvec, options, &edgecut,
+		// 	parts, MPI_COMM_WROLD);
 
-// 	}
-// }
+	}
+}

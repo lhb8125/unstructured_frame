@@ -7,6 +7,7 @@
 * @last Modified time: 2019-10-14 16:33:09
 */
 #include <cstdio>
+#include <cstdlib>
 #include "section.hpp"
 
 /**
@@ -67,6 +68,7 @@ Array<Label> Section::faceNodesForEle(
 	Label* conn, const Label eleType, const Label idx)
 {
 	Array<Label> tmp;
+	// printf("%d, %d\n", eleType, TETRA_4);
 	if(eleType==TETRA_4)
 	{
 		/// the first face
@@ -94,9 +96,54 @@ Array<Label> Section::faceNodesForEle(
 			tmp.push_back(conn[0]);
 			tmp.push_back(conn[3]);
 		}
+	} else if(eleType==HEXA_8)
+	{
+		/// the first face
+		if(idx==0)
+		{
+			tmp.push_back(conn[0]);
+			tmp.push_back(conn[3]);
+			tmp.push_back(conn[2]);
+			tmp.push_back(conn[1]);
+		} else if(idx==1)
+		/// the second face
+		{
+			tmp.push_back(conn[0]);
+			tmp.push_back(conn[1]);
+			tmp.push_back(conn[5]);
+			tmp.push_back(conn[4]);
+		} else if(idx==2)
+		/// the third face
+		{
+			tmp.push_back(conn[1]);
+			tmp.push_back(conn[2]);
+			tmp.push_back(conn[6]);
+			tmp.push_back(conn[5]);
+		} else if(idx==3)
+		/// the fourth face
+		{
+			tmp.push_back(conn[2]);
+			tmp.push_back(conn[3]);
+			tmp.push_back(conn[7]);
+			tmp.push_back(conn[6]);
+		} else if(idx==4)
+		/// the fourth face
+		{
+			tmp.push_back(conn[0]);
+			tmp.push_back(conn[4]);
+			tmp.push_back(conn[7]);
+			tmp.push_back(conn[3]);
+		} else if(idx==5)
+		/// the fourth face
+		{
+			tmp.push_back(conn[4]);
+			tmp.push_back(conn[5]);
+			tmp.push_back(conn[6]);
+			tmp.push_back(conn[7]);
+		}		
 	} else
 	{
-		Terminate("find face nodes for Elements", eleType);
+		Terminate("find face nodes for Elements", "The element type is not supported");
 	}
 	return tmp;
 }

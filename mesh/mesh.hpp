@@ -72,7 +72,7 @@ public:
 	{
 		// readCGNSFile(filePtr);
 		readCGNSFilePar(filePtr);
-		// topo_ = new Topology(this->secs_);
+		topo_ = new Topology(this->secs_);
 	};
 	/**
 	* @brief initialize mesh and construct topology
