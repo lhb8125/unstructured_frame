@@ -1,4 +1,4 @@
-CXX=mpic++
+CXX=mpicxx.mpich
 #CXX=/home/export/online1/systest/swrh/lhb/software/OpenMPI/bin/mpicxx
 #CXX=/home/export/online1/systest/swrh/lhb/software/MPICH/bin/mpicxx
 
@@ -8,7 +8,7 @@ DEPFLAG=-MMD -MP
 
 CXXFLAG=-O2
 
-LIB=-lyaml-cpp -lcgns -lhdf5 -lm -lz -ldl
+LIB=-lyaml-cpp -lcgns -lhdf5 -lparmetis -lmetis -lm -lz -ldl
 
 INCLUDE=-I/home/liuhb/Downloads/yaml-cpp-release-0.3.0/build/include \
 	-I/home/liuhb/software/CGNS-3.4.0/src/build-hdf5/include \

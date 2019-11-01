@@ -54,7 +54,7 @@ private:
 	/// Connectivity between cells and edges
 	ArrayArray<Label> cell2Edge_;
 	/// type of cells
-	Array<ElementType_t> cellType_;
+	Array<Label> cellType_;
 	/// type of faces
 	Array<Label> faceType_;
 	// /// reorder the face2Node topology to seperate the boundary faces and internal faces
@@ -69,7 +69,7 @@ public:
 	* @brief Construct from CGNS file
 	* @param cell2Node Connectivity between cells and nodes
 	*/
-	Topology(Array<Section>& secs);
+	void constructTopology(Array<Section>& secs);
 	/**
 	* @brief deconstructor
 	*/
@@ -90,6 +90,21 @@ public:
 	* @brief get the count of edges
 	*/
 	Label getEdgesNum(){return this->edgeNum_;};
+
+	void setCell2Node(ArrayArray<Label>& cell2Node)
+	{
+		this->cell2Node_ = cell2Node;
+		// printf("%d\n", cell2Node_.num);
+	};
+
+	void setCellType(Array<Label>& cellType)
+	{
+		this->cellType_.clear();
+		this->cellType_.assign(cellType.begin(), cellType.end());
+	};
+
+	const ArrayArray<Label> getCell2Node() {return this->cell2Node_;}
+	const Array<Label> getCellType() {return this->cellType_;}
 };
 
 #endif

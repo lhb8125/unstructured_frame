@@ -25,4 +25,4 @@ rm -f ./test.out
 make
 #/home/export/online1/systest/swrh/lhb/software/OpenMPI/bin/mpirun -n 4 ./test.out
 #/home/export/online1/systest/swrh/lhb/software/MPICH/bin/mpirun -n 4 ./test.out
-mpiexec -np 4 ./test.out
+mpiexec.mpich -np 4 ./test.out

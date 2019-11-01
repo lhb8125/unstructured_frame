@@ -32,6 +32,8 @@ private:
 	Scalar* procLoadSum_;
 	/// count of processes
 	Label procNum_;
+	/// start index of cells in every processors
+	Label* cellStartId_;
 	/**
 	* @brief find the process with the least measurement load
 	* @param procId Id of processes for all regions
@@ -42,6 +44,21 @@ private:
 	* @param s the measurement load of all regions
 	*/
 	Label findMaxRegion(const Array<Scalar> s);
+	/*
+	* @brief collect the neighbor cell index through mpi
+	*/
+	Array<Label> collectNeighborCell(ArrayArray<Label>& bndFaceList,
+		Array<Array<Label> >& bndFaceArr, Array<Label>& face2CellArr);
+	/*
+	* @brief distribute the cells to other processors according to 
+	         the result of PARMETIS
+	*/
+	ArrayArray<Label> distributeCellsToProcs(ArrayArray<Label>& cell2Node,
+		Label* parts);
+	/*
+	* @brief distribute the cell infomation (type) to other processors
+	*/
+	Array<Label> distributeCellInfoToProcs(Array<Label>& cellInfo, Label* parts);
 public:
 	/**
 	* @brief default constructor
@@ -67,7 +84,7 @@ public:
 	* @brief Third Level load balance with parmetis
 	* @param reg the collection of regions owned by this processor
 	*/
-	void LoadBalancer_3(Array<Region>* reg);
+	Label* LoadBalancer_3(Array<Region>& reg);
 
 	ArrayArray<Label>& getProcId() {return this->procId_;}
 	ArrayArray<Scalar>& getProcLoad() {return this->procLoad_;}

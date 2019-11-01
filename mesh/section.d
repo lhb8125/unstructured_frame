@@ -1,7 +1,8 @@
 mesh/section.o: mesh/section.cpp mesh/section.hpp \
  /home/liuhb/software/CGNS-3.4.0/src/build-hdf5/include/cgnslib.h \
  /home/liuhb/software/CGNS-3.4.0/src/build-hdf5/include/cgnstypes.h \
- utilities.hpp
+ utilities.hpp /usr/include/mpich/mpi.h /usr/include/mpich/mpio.h \
+ /usr/include/mpich/mpi.h /usr/include/mpich/mpicxx.h
 
 mesh/section.hpp:
 
@@ -10,3 +11,11 @@ mesh/section.hpp:
 /home/liuhb/software/CGNS-3.4.0/src/build-hdf5/include/cgnstypes.h:
 
 utilities.hpp:
+
+/usr/include/mpich/mpi.h:
+
+/usr/include/mpich/mpio.h:
+
+/usr/include/mpich/mpi.h:
+
+/usr/include/mpich/mpicxx.h:

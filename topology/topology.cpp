@@ -13,6 +13,14 @@
 #include "section.hpp"
 
 /**
+* @brief constructor
+*/
+Topology::Topology()
+{
+	
+}
+
+/**
 * @brief deconstructor
 */
 Topology::~Topology()
@@ -24,7 +32,7 @@ Topology::~Topology()
 * @brief Construct from CGNS file
 * @param cell2Node Connectivity between cells and nodes
 */
-Topology::Topology(Array<Section>& secs)
+void Topology::constructTopology(Array<Section>& secs)
 {
 	Label secNum = secs.size();
 	int rank;
@@ -32,17 +40,19 @@ Topology::Topology(Array<Section>& secs)
 
 	/// record the type of cells
 	cellNum_ = 0;
+	Array<Label> tmp;
 	for (int i = 0; i < secNum; ++i)
 	{
 		cellNum_ += secs[i].num;
+		// printf("%d, %d, %d\n", i, secs[i].num, secs[i].type);
 		for (int j = 0; j < secs[i].num; ++j)
 		{
 			// printf("%d, %d, %d\n", j, secs[i].num, secs[i].type);
-			cellType_.push_back(secs[i].type);
+			tmp.push_back(secs[i].type);
 		}
 	}
 
-	/// construct the topology array: cell2Node
+	// / construct the topology array: cell2Node
 	cell2Node_.startIdx = new Label[cellNum_+1];
 	cell2Node_.startIdx[0] = 0;
 	Label k=0;
@@ -80,6 +90,7 @@ Topology::Topology(Array<Section>& secs)
 // }
 	/// construct the topology array: face2Node
 	// Array<Array<Label> > faces2NodesBndTmp;
+#if 0
 	Array<Array<Label> > faces2NodesTmp;
 	for (int i = 0; i < cellNum_; ++i)
 	{
@@ -109,6 +120,8 @@ Topology::Topology(Array<Section>& secs)
 	faceNum_ = faceNum[0]+faceNum[1];
 	faceNum_b_ = faceNum[0];
 	faceNum_i_ = faceNum[1];
+#endif
+	// MPI_Send(&)
 // for (int i = 0; i < faces2NodesTmp.size(); ++i)
 // {
 // 	printf("The %dth face: ", i);
@@ -118,6 +131,7 @@ Topology::Topology(Array<Section>& secs)
 // 	}
 // 	printf("\n");
 // }
+#if 0
 	face2Node_ = transformArray(faces2NodesTmp);
 
 	/// construct the topology array: cell2Face
@@ -156,6 +170,7 @@ Topology::Topology(Array<Section>& secs)
 		cells2FacesTmp.push_back(cell2FacesTmp);
 	}
 	cell2Face_ = transformArray(cells2FacesTmp);
+#endif
 // for (int i = 0; i < cell2Face_.num; ++i)
 // {
 // 	printf("The %dth cell: ", i);
@@ -165,7 +180,7 @@ Topology::Topology(Array<Section>& secs)
 // 	}
 // 	printf("\n");
 // }
-
+#if 0
 	/// construct the topology array: face2Cell
 	face2Cell_.startIdx = new Label[faceNum_+1];
 	face2Cell_.num = faceNum_;
@@ -191,6 +206,7 @@ Topology::Topology(Array<Section>& secs)
 			bonus[idx]++;
 		}
 	}
+#endif
 // for (int i = 0; i < face2Cell_.num; ++i)
 // {
 // 	printf("The %dth face: ", i);

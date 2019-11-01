@@ -19,7 +19,7 @@
 class Mesh
 {
 private:
-	Topology *topo_;
+	Topology topo_;
 	/// Coordinates of Nodes
 	Nodes nodes_;
 	/// section information for CGNS file
@@ -47,7 +47,7 @@ private:
 	/**
 	* @brief write mesh file with CGNS format, parallel version
 	*/
-	void writeCGNSFilePar(const char* filePtr);
+	void writeCGNSFilePar(const char* filePtr, Label* parts);
 	/**
 	* @brief initialize mesh file with CGNS format, parallel version
 	*/
@@ -58,13 +58,12 @@ public:
 	*/
 	Mesh()
 	{
-		this->topo_ = NULL;
 		this->meshType_ = Inner;
 	};
 	/**
 	* @brief deconstructor
 	*/
-	virtual ~Mesh(){delete this->topo_;};
+	virtual ~Mesh(){};
 	/**
 	* @brief read mesh and construct topology
 	*/
@@ -72,7 +71,7 @@ public:
 	{
 		// readCGNSFile(filePtr);
 		readCGNSFilePar(filePtr);
-		topo_ = new Topology(this->secs_);
+		topo_.constructTopology(this->secs_);
 	};
 	/**
 	* @brief initialize mesh and construct topology
@@ -86,16 +85,25 @@ public:
 	/**
 	* @brief write mesh and construct topology
 	*/
-	void writeMesh(const char* filePtr)
+	void writeMesh(const char* filePtr, Label* parts)
 	{
 		// writeCGNSFile(filePtr);
-		writeCGNSFilePar(filePtr);
+		writeCGNSFilePar(filePtr, parts);
 		// topo_ = new Topology(this->secs_);
 	};
 	/**
 	* @brief get class Topology
 	*/
-	Topology* getTopology() { return this->topo_;};
+	Topology& getTopology() { return this->topo_;};
+
+	Array<Section>& getSections() {return this->secs_; };
+
+	void setLoadBalancerResult(ArrayArray<Label>& cell2Node,
+		Array<Label> cellType)
+	{
+		this->topo_.setCell2Node(cell2Node);
+		this->topo_.setCellType(cellType);
+	};
 	
 };
 

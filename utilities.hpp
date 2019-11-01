@@ -13,16 +13,26 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include "mpi.h"
 
 #define Array std::vector
 #define Label long
 #define Label32 int
-#define Scalar double
+#define Scalar float
 
 #define Inner 0
 #define Boco 1
 
 #define Terminate(location, content) {printf("Location: %s, error message: %s\n", location, content); exit(-1);}
+
+#if(Label==long)
+#define MPI_LABEL MPI_LONG
+#else
+#define MPI_LABEL MPI_INT
+#endif
+
+// #define DEBUG_METIS
+
 
 template<class T> bool compareArray(Array<T>& a, Array<T>& b);
 
@@ -52,11 +62,39 @@ public:
 
 };
 
+template<class T>
+int partition(Array<Array<T> >& arr, int l , int r)
+{
+	int k=l,pivot = arr[r][0];
+	for (int i = l; i < r; ++i)
+	{
+		if(arr[i][0]<=pivot)
+		{
+			arr[i].swap(arr[k]);
+			k++;
+		}
+	}
+	arr[k].swap(arr[r]);
+	return k;
+}
+
+template<class T>
+void quicksortArray(Array<Array<T> >& arr, int l, int r)
+{
+	if(l<r)
+	{
+		int pivot = partition(arr, l, r);
+		quicksortArray(arr, l, pivot-1);
+		quicksortArray(arr, pivot+1, r);
+	}
+}
+
 /// eliminate the duplicate elements
 template<class T>
 Label* filterArray(Array<Array<T> >& arr)
 {
 	int num = arr.size();
+	quicksortArray(arr, 0, num-1);
 	// for(int i=0;i<tmp;i++) printf("%d\n", arr[0][i]);
 	sort(arr[0].begin(), arr[0].end());
 	int eraseNum = 0;
@@ -71,8 +109,11 @@ Label* filterArray(Array<Array<T> >& arr)
 	while(end < num)
 	{
 		// printf("%dth elements in %d\n", end, num);
+		// printf("%d, %d\n", end, num);
 		if(isInner[end]) {end++; continue;}
-		for (int i = end+1; i < num; ++i)
+		// for (int i = end+1; i < num; ++i)
+		int i = end+1;
+		while(i<num && arr[i][0]==arr[end][0])
 		{
 			if(compareArray(arr[i],arr[end]))
 			{
@@ -81,6 +122,7 @@ Label* filterArray(Array<Array<T> >& arr)
 				innArr.push_back(arr[end]);
 				break;
 			}
+			i++;
 		}
 		if(!isInner[end]) bndArr.push_back(arr[end]);
 		end++;
@@ -104,6 +146,7 @@ bool compareArray(Array<T>& a, Array<T>& b)
 	if(num_a!=num_b) return false;
 	for (int i = 0; i < num_a; ++i)
 	{
+		// printf("%d, %d\n", a[i],b[i]);
 		if(a[i]!=b[i]) return false;
 	}
 	return true;
@@ -136,5 +179,67 @@ ArrayArray<T> transformArray(Array<Array<T> > arr)
 	}
 	return res;
 };
+
+template<class T>
+Label findArray(Array<Array<T> >& arr, Array<T>& value)
+{
+	int num = arr.size();
+	// printf("%d\n", num);
+	// printf("*****************************************************\n");
+	for (int i = 0; i < num; ++i)
+	{
+		// for (int j = 0; j < value.size(); ++j)
+		// {
+			// printf("(%d, %d)", arr[i][j], value[j]);
+		// }
+		// printf("\n");
+		if(compareArray(arr[i], value)) {return i;};
+	}
+	// printf("*****************************************************\n");
+	return -1;
+}
+
+template<class T>
+Label findSortedArray(Array<Array<T> >& arr, Array<T>& value, Label l, Label r)
+{
+	Label num = arr.size();
+	bool isFinded = false;
+	Label m;
+	while(l<r)
+	{
+		m = (l+r)/2;
+		if(l==m)
+		{
+			if(arr[r][0]==value[0]) {isFinded=true; m=r;}
+			break;
+		}
+		if(arr[m][0]<value[0]) l=m;
+		else if(arr[m][0]>value[0]) r=m;
+		else {isFinded = true; break;}
+	}
+	if(!isFinded) return -1;
+	int i=m;
+	while(i<num && arr[i][0]==value[0])
+	{
+		if(compareArray(arr[i], value)) return i;
+		i++;
+	}
+	i=m;
+	while(i>=0 && arr[i][0]==value[0])
+	{
+		if(compareArray(arr[i], value)) return i;
+		i--;
+	}
+	// // printf("%d\n", num);
+	// // printf("*****************************************************\n");
+	// for (int i = 0; i < num; ++i)
+	// {
+	// 	// printf("%d, %d\n", i, num);
+	// 	if(arr[i][0]!=value[0]) continue;
+	// 	// if(compareArray(arr[i], value)) {return i;};
+	// }
+	// // printf("*****************************************************\n");
+	return -1;
+}
 
 #endif

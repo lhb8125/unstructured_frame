@@ -39,6 +39,10 @@ void Mesh::readCGNSFilePar(const char* filePtr)
 	if(rank==0) printf("nBases: %d, basename: %s, cellDim: %d, physDim: %d\n", nBases, basename, cellDim, physDim);
 	MPI_Barrier(MPI_COMM_WORLD);
 
+    int precision;
+    cg_precision(iFile, &precision);
+    // printf("precision: %d\n", precision);
+
 	char zoneName[20];
 	int nZones;
 	cgsize_t sizes[3];
@@ -67,19 +71,20 @@ void Mesh::readCGNSFilePar(const char* filePtr)
 	Scalar* x = new Scalar[nnodes];
 	if(cg_coord_info(iFile, iBase, iZone, 1, &dataType, coordName) ||
 		// sizeof(dataType)!=sizeof(Scalar) ||
-        dataType!=RealDouble ||
 		cgp_coord_read_data(iFile, iBase, iZone, 1, &start, &end, x))
 		Terminate("readCoords", cg_get_error());
+    if(dataType==RealSingle && sizeof(Scalar)==8)
+        Terminate("readCoords","The data type of Scalar does not match");
+    if(dataType==RealDouble && sizeof(Scalar)==4)
+        Terminate("readCoords","The data type of Scalar does not match");
 	Scalar* y = new Scalar[nnodes];
 	if(cg_coord_info(iFile, iBase, iZone, 2, &dataType, coordName) ||
 		// sizeof(dataType)!=sizeof(Scalar) ||
-        dataType!=RealDouble ||
 		cgp_coord_read_data(iFile, iBase, iZone, 2, &start, &end, y))
 		Terminate("readCoords", cg_get_error());
 	Scalar* z = new Scalar[nnodes];
 	if(cg_coord_info(iFile, iBase, iZone, 3, &dataType, coordName) ||
 		// sizeof(dataType)!=sizeof(Scalar) ||
-        dataType!=RealDouble ||
 		cgp_coord_read_data(iFile, iBase, iZone, 3, &start, &end, z))
 		Terminate("readCoords", cg_get_error());
 	MPI_Barrier(MPI_COMM_WORLD);
@@ -118,8 +123,6 @@ void Mesh::readCGNSFilePar(const char* filePtr)
     	sec.name = new char[20];
     	strcpy(sec.name, secName);
     	sec.type   = type;
-    	sec.iStart = start;
-    	sec.iEnd   = end;
     	sec.nBnd   = nBnd;
 		/// if the section does not match the type of mesh, then ignore it.
 		Label secStart = start-1;
@@ -135,29 +138,26 @@ void Mesh::readCGNSFilePar(const char* filePtr)
     		Terminate("readElements", cg_get_error());
 		MPI_Barrier(MPI_COMM_WORLD);
 
-
+        sec.iStart = start+secStart;
+        sec.iEnd   = end+secStart;
     	sec.num    = end-start+1;
-#ifndef INTEGER32
-    	sec.conn   = elements;
-#else
-    	int *eles32 = (int*)&elements[0];
-        Label* eles64 = new Label[nEles*Section::nodesNumForEle(type)];
-    	for (int i = 0; i < nEles; ++i)
-    	{
-    		for (int j = 0; j < Section::nodesNumForEle(type); ++j)
-    		{
-                eles64[i*Section::nodesNumForEle(type)+j] = (Label)eles32[i*Section::nodesNumForEle(type)+j];
-    		}
-            // if(i<20)
-            // {
-            //     for (int j = 0; j < Section::nodesNumForEle(type); ++j)
-            //         printf("%ld, ", eles64[i*Section::nodesNumForEle(type)+j]);
-            //     printf("\n");
-            // }    
-    	}
-        sec.conn = eles64;
-        delete[] elements;
-#endif
+        if(precision==64)
+        {
+    	   sec.conn   = elements;
+        } else if(precision==32)
+        {
+            int *eles32 = (int*)&elements[0];
+            Label* eles64 = new Label[nEles*Section::nodesNumForEle(type)];
+            for (int i = 0; i < nEles; ++i)
+    	    {
+                for (int j = 0; j < Section::nodesNumForEle(type); ++j)
+                {
+                    eles64[i*Section::nodesNumForEle(type)+j] = (Label)eles32[i*Section::nodesNumForEle(type)+j];
+                }
+        	}
+            sec.conn = eles64;
+            delete[] elements;
+        }
         this->secs_.push_back(sec);
 	}
     MPI_Barrier(MPI_COMM_WORLD);
@@ -222,7 +222,7 @@ void Mesh::readBoundaryCondition(int iFile, int iBase, int iZone)
     }    
 }
 
-void Mesh::writeCGNSFilePar(const char* filePtr)
+void Mesh::writeCGNSFilePar(const char* filePtr, Label* parts)
 {
 	int nodesPerSide = 5;
 	int nodeNum = this->nodeNum_;
@@ -288,41 +288,98 @@ void Mesh::writeCGNSFilePar(const char* filePtr)
 	MPI_Barrier(MPI_COMM_WORLD);
 
 
-    /* create data node for elements */
-    Label nSecs = this->secs_.size();
-    // nSecs = 1;
-    for (int iSec = 0; iSec < nSecs; ++iSec)
-    {
-    	int iSec_f = iSec+1;
-    	if (cgp_section_write(iFile, iBase, iZone, secs_[iSec].name, 
-    		secs_[iSec].type, secs_[iSec].iStart, secs_[iSec].iEnd, 0, &iSec_f))
-        	Terminate("writeSecInfo", cg_get_error());  
-        MPI_Barrier(MPI_COMM_WORLD);
-    printf("section: %d, start: %d. end: %d\n", iSec_f, secs_[iSec].iStart, secs_[iSec].iEnd);
-    	int eleNum = secs_[iSec].iEnd-secs_[iSec].iStart+1;
-    	int nEles = (eleNum + numProcs - 1) / numProcs;
-    	cgsize_t start  = nEles * rank + secs_[iSec].iStart;
-    	cgsize_t end    = nEles * (rank + 1) + secs_[iSec].iStart-1;
-    	if (end > secs_[iSec].iEnd) end = secs_[iSec].iEnd;
-    printf("processor: %d, start: %d. end: %d\n", rank, start, end);
-    // if(rank==0)
+    ArrayArray<Label> conn = this->getTopology().getCell2Node();
+    Array<Label> cellType = this->getTopology().getCellType();
+    Label *cellStartId = new Label[numProcs+1];
+    MPI_Allgather(&conn.num, 1, MPI_LABEL, &cellStartId[1], 1, MPI_LABEL, MPI_COMM_WORLD);
+    cellStartId[0] = 0;
+    // if(rank==1)
     // {
-    // 	for (int i = 0; i < secs_[iSec].num; ++i)
-    // 	{
-    // 		printf("The %dth element: ", i+secs_[iSec].iStart);
-    // 		for (int j = 0; j < Section::nodesNumForEle(secs_[iSec].type); ++j)
-    // 		{
-    // 			printf("%d, ", secs_[iSec].conn[i*Section::nodesNumForEle(secs_[iSec].type)+j]);
-    // 		}
-    // 		printf("\n");
-    // 	}
+        for (int i = 0; i < numProcs; ++i)
+        {
+            cellStartId[i+1] += cellStartId[i];
+            // cellStartId[i]++;
+        }
+        // printf("\n");
     // }
-	    /* write the element connectivity in parallel */
-    	if (cgp_elements_write_data(iFile, iBase, iZone, iSec_f, 
-    		start, end, secs_[iSec].conn))
-        	Terminate("writeSecConn", cg_get_error());  	
-    	MPI_Barrier(MPI_COMM_WORLD);
-    }
+    /*
+    * filter section
+    * code
+    */
+    int iSec;
+    // eleNum = 528915;
+    // int nEles = (eleNum + numProcs - 1) / numProcs;
+    // start  = nEles * rank + 1;
+    // end    = nEles * (rank + 1);
+    // if (end > eleNum) end = eleNum;
+    // if(rank==0) {start = 1; end = 132011;}
+    // else if(rank==1) {start = 132012; end = 261413;}
+    // else if(rank==2) {start = 261414; end = 391216;}
+    // else {start = 391217; end = 528915;}
+    ElementType_t eleType = (ElementType_t)cellType[0];
+    if(cgp_section_write(iFile, iBase, iZone, "TETRA_4", eleType, 1, cellStartId[numProcs],
+        0, &iSec))
+        Terminate("writeSecInfo", cg_get_error());
+    // printf("%d, %d\n", start, end);
+    if(cgp_elements_write_data(iFile, iBase, iZone, iSec, cellStartId[rank]+1,
+        cellStartId[rank+1], conn.data))
+        Terminate("writeSecConn", cg_get_error());
+
+    int S, Fs, A;
+    if(cg_sol_write(iFile, iBase, iZone, "Solution", CellCenter, &S) ||
+        cgp_field_write(iFile, iBase, iZone, S, LongInteger, "CellIndex", &Fs))
+        Terminate("writeSolutionInfo", cg_get_error());
+
+    start = cellStartId[rank]+1;
+        // for (int i = 0; i < conn.num; ++i)
+        // {
+        //     if(parts[i]>3) printf("rank: %d, cellIdx: %d, value: %d\n", rank, i, parts[i]);
+        // }
+    if(cgp_field_write_data(iFile, iBase, iZone, S, Fs, &start,
+        &cellStartId[rank+1], parts))
+        Terminate("writeSolutionData", cg_get_error());
+    // if(cg_goto(iFile, iBase, "Zone_t", 1, NULL) ||
+    //     cg_user_data_write("User Data") ||
+    //     cg_gorel(iFile, "User Data", 0, NULL) ||
+    //     cgp_array_write("CellIndex", LongInteger, 1, &ncells, &A))
+    //     Terminate("writeArrayInfo", cg_get_error());
+    // if(cgp_array_write_data(A, &start, &end, parts))
+    //     Terminate("writeArrayData", cg_get_error());
+    // /* create data node for elements */
+    // Label nSecs = this->secs_.size();
+    // // nSecs = 1;
+    // for (int iSec = 0; iSec < nSecs; ++iSec)
+    // {
+    // 	int iSec_f = iSec+1;
+    // 	if (cgp_section_write(iFile, iBase, iZone, secs_[iSec].name, 
+    // 		secs_[iSec].type, secs_[iSec].iStart, secs_[iSec].iEnd, 0, &iSec_f))
+    //     	Terminate("writeSecInfo", cg_get_error());  
+    //     MPI_Barrier(MPI_COMM_WORLD);
+    // printf("section: %d, start: %d. end: %d\n", iSec_f, secs_[iSec].iStart, secs_[iSec].iEnd);
+    // 	int eleNum = secs_[iSec].iEnd-secs_[iSec].iStart+1;
+    // 	int nEles = (eleNum + numProcs - 1) / numProcs;
+    // 	cgsize_t start  = nEles * rank + secs_[iSec].iStart;
+    // 	cgsize_t end    = nEles * (rank + 1) + secs_[iSec].iStart-1;
+    // 	if (end > secs_[iSec].iEnd) end = secs_[iSec].iEnd;
+    // printf("processor: %d, start: %d. end: %d\n", rank, start, end);
+    // // if(rank==0)
+    // // {
+    // // 	for (int i = 0; i < secs_[iSec].num; ++i)
+    // // 	{
+    // // 		printf("The %dth element: ", i+secs_[iSec].iStart);
+    // // 		for (int j = 0; j < Section::nodesNumForEle(secs_[iSec].type); ++j)
+    // // 		{
+    // // 			printf("%d, ", secs_[iSec].conn[i*Section::nodesNumForEle(secs_[iSec].type)+j]);
+    // // 		}
+    // // 		printf("\n");
+    // // 	}
+    // // }
+	   //  /* write the element connectivity in parallel */
+    // 	if (cgp_elements_write_data(iFile, iBase, iZone, iSec_f, 
+    // 		start, end, secs_[iSec].conn))
+    //     	Terminate("writeSecConn", cg_get_error());  	
+    // 	MPI_Barrier(MPI_COMM_WORLD);
+    // }
 
     writeBoundaryCondition(iFile, iBase, iZone);
 
