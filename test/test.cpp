@@ -77,7 +77,7 @@ int main(int argc, char** argv)
 	printf("reading HDF5 cgns file: ......\n");
 	// reg.getMesh().initMesh("data/hdf5.cgns");
 	// MPI_Barrier(MPI_COMM_WORLD);
-	reg.getMesh().readMesh("data/yf17_hdf5.cgns");
+	reg.getMesh().readMesh("data/hdf5.cgns");
 	MPI_Barrier(MPI_COMM_WORLD);
 	// MPI_Barrier(MPI_COMM_WORLD);
 
@@ -85,6 +85,8 @@ int main(int argc, char** argv)
 
 	/// load balance in region
 	Label* parts = lb->LoadBalancer_3(regs);
+
+	regs[0].getMesh().getTopology().constructTopology();
 
 	regs[0].getMesh().writeMesh("data/result.cgns", parts);
 

@@ -563,9 +563,9 @@ Label* LoadBalancer::LoadBalancer_3(Array<Region>& regs)
 
 		// printf("%d, %d, %d\n", rank, cell2NodeNew.size(), cellTypeNew.size());
 		/// 输入网格负载均衡后的拓扑
-		regs[i].getMesh().setLoadBalancerResult(cell2NodeNew, cellTypeNew);
+		regs[i].getMesh().setLoadBalancerResult(cell2NodeNew, cellTypeNew, cellStartId_[rank]);
 		/// 输出原始网格拓扑
-		// regs[i].getMesh().setLoadBalancerResult(cell2Node);
+		// regs[i].getMesh().setLoadBalancerResult(cell2Node,  cellType);
 		// printf("%d\n", cell2NodeNew.size());
 		// for (int i = 0; i < cellNum; ++i)
 		// {
@@ -684,8 +684,11 @@ Array<Label> LoadBalancer::collectNeighborCell(ArrayArray<Label>& bndFaceList,
 			for (int j = 0; j < bndFaces+1; ++j)
 			{
 				// printf("%d, ", neighborCellIdx_local[j]);
+				/// >= 0 process boundary face
+				/// ==-1 physical boundary face
+				/// ==-2 inner face
 				if(neighborCellIdx_local[j]==-1)
-					neighborCellIdx_local[j] = 0;
+					neighborCellIdx_local[j] = -2;
 				while(face2CellNew[k]==-1) k++;
 				// if(neighborCellIdx_local[j]!=0)
 					// cell2CellArr[face2CellArr[k]].push_back(neighborCellIdx_local[j])

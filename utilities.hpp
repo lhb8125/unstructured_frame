@@ -18,7 +18,7 @@
 #define Array std::vector
 #define Label long
 #define Label32 int
-#define Scalar float
+#define Scalar double
 
 #define Inner 0
 #define Boco 1

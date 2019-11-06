@@ -99,10 +99,11 @@ public:
 	Array<Section>& getSections() {return this->secs_; };
 
 	void setLoadBalancerResult(ArrayArray<Label>& cell2Node,
-		Array<Label> cellType)
+		Array<Label> cellType, Label cellStartId)
 	{
 		this->topo_.setCell2Node(cell2Node);
 		this->topo_.setCellType(cellType);
+		this->topo_.setCellStartId(cellStartId);
 	};
 	
 };

@@ -29,8 +29,10 @@ private:
 	Label faceNum_;
 	/// count of boundary faces;
 	Label faceNum_b_;
-	/// count of internal faces;
-	Label faceNum_i_;
+	/// count of ghost faces;
+	Label faceNum_g_;
+	/// global start index of elements of this processor
+	Label cellStartId_;
 	/// Connectivity between nodes and nodes
 	ArrayArray<Label> node2Node_;
 	/// Connectivity between nodes and edges
@@ -41,15 +43,17 @@ private:
 	ArrayArray<Label> edge2Cell_;
 	/// Connectivity between faces and nodes
 	ArrayArray<Label> face2Node_;
-	/// Connectivity between faces and cells
+	/// Connectivity between faces and cells (finish)
 	ArrayArray<Label> face2Cell_;
+	/// Connectivity between faces and cells at the process boundary (finish)
+	Array<Array<Label> > face2CellPatch_;
 	/// Connectivity between faces and edges
 	ArrayArray<Label> face2Edge_;
-	/// Connectivity between cells and cells
+	/// Connectivity between cells and cells (finish)
 	ArrayArray<Label> cell2Cell_;
-	/// Connectivity between cells and nodes
+	/// Connectivity between cells and nodes (finish)
 	ArrayArray<Label> cell2Node_;
-	/// Connectivity between cells and faces
+	/// Connectivity between cells and faces (finish)
 	ArrayArray<Label> cell2Face_;
 	/// Connectivity between cells and edges
 	ArrayArray<Label> cell2Edge_;
@@ -60,16 +64,30 @@ private:
 	// /// reorder the face2Node topology to seperate the boundary faces and internal faces
 	// Label reorderFace2Node(Array<Array<Label> >& face2NodeTmp,
 	// 	Array<Array<Label> >& face2NodeBndTmp);
+	/*
+	* @brief generate the face2Cell topology at the boundary face
+	* @param face2NodeInn face-to-node topology, sorted for the first node index at least
+	* @param face2NodeBnd face-to-node topology, sorted for the first node index at least
+	* @param face2CellInn face-to-cell topology, one-to-one corresponding to the face above
+	* @param face2CellBnd
+	*/
+	void setPatchInfo(Array<Array<Label> > face2NodeInn,
+		Array<Array<Label> > face2NodeBnd, Array<Array<Label> > face2CellInn,
+		Array<Array<Label> > face2CellBnd);
 public:
 	/**
 	* @brief default constructor
 	*/
 	Topology();
 	/**
-	* @brief Construct from CGNS file
-	* @param cell2Node Connectivity between cells and nodes
+	* @brief Construct from section information of CGNS file
+	* @param secs sections storing connectivity between cells and nodes
 	*/
 	void constructTopology(Array<Section>& secs);
+	/**
+	* @brief Construct from the connectivity after load balance
+	*/
+	void constructTopology();
 	/**
 	* @brief deconstructor
 	*/
@@ -103,8 +121,16 @@ public:
 		this->cellType_.assign(cellType.begin(), cellType.end());
 	};
 
+	void setCellStartId(Label cellStartId)
+	{
+		this->cellStartId_ = cellStartId;
+	};
+
+
+
 	const ArrayArray<Label> getCell2Node() {return this->cell2Node_;}
 	const Array<Label> getCellType() {return this->cellType_;}
+	const Array<Array<Label> > getFace2CellPatch() {return this->face2CellPatch_;}
 };
 
 #endif

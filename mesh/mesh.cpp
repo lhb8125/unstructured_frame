@@ -287,7 +287,7 @@ void Mesh::writeCGNSFilePar(const char* filePtr, Label* parts)
         Terminate("writeCoords", cg_get_error());
 	MPI_Barrier(MPI_COMM_WORLD);
 
-
+    /// write connectivity
     ArrayArray<Label> conn = this->getTopology().getCell2Node();
     Array<Label> cellType = this->getTopology().getCellType();
     Label *cellStartId = new Label[numProcs+1];
@@ -307,17 +307,8 @@ void Mesh::writeCGNSFilePar(const char* filePtr, Label* parts)
     * code
     */
     int iSec;
-    // eleNum = 528915;
-    // int nEles = (eleNum + numProcs - 1) / numProcs;
-    // start  = nEles * rank + 1;
-    // end    = nEles * (rank + 1);
-    // if (end > eleNum) end = eleNum;
-    // if(rank==0) {start = 1; end = 132011;}
-    // else if(rank==1) {start = 132012; end = 261413;}
-    // else if(rank==2) {start = 261414; end = 391216;}
-    // else {start = 391217; end = 528915;}
     ElementType_t eleType = (ElementType_t)cellType[0];
-    if(cgp_section_write(iFile, iBase, iZone, "TETRA_4", eleType, 1, cellStartId[numProcs],
+    if(cgp_section_write(iFile, iBase, iZone, "Connectivity", eleType, 1, cellStartId[numProcs],
         0, &iSec))
         Terminate("writeSecInfo", cg_get_error());
     // printf("%d, %d\n", start, end);

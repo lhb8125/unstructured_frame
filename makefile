@@ -23,7 +23,8 @@ LIBDIR=-L/home/liuhb/Downloads/yaml-cpp-release-0.3.0/build/lib \
        -L/home/liuhb/software/CGNS-3.4.0/src/build-hdf5/lib
 
 CXXOBJS=loadBalancer/loadBalancer.o test/test.o mesh/section.o \
-		topology/topology.o mesh/mesh.o mesh/nodes.o
+		topology/topology.o mesh/mesh.o mesh/nodes.o \
+		mesh/boundary.o
 
 DEPS:=$(CXXOBJS:.o=.d)
 

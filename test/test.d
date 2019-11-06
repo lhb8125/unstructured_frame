@@ -26,7 +26,8 @@ test/test.o: test/test.cpp \
  mesh/section.hpp \
  /home/liuhb/software/CGNS-3.4.0/src/build-hdf5/include/cgnslib.h \
  /home/liuhb/software/CGNS-3.4.0/src/build-hdf5/include/cgnstypes.h \
- topology/topology.hpp mesh/section.hpp mesh/nodes.hpp
+ topology/topology.hpp mesh/section.hpp mesh/nodes.hpp mesh/boundary.hpp \
+ mesh/mesh.hpp
 
 /home/liuhb/Downloads/yaml-cpp-release-0.3.0/build/include/yaml.h:
 
@@ -97,3 +98,7 @@ topology/topology.hpp:
 mesh/section.hpp:
 
 mesh/nodes.hpp:
+
+mesh/boundary.hpp:
+
+mesh/mesh.hpp:

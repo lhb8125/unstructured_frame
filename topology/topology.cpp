@@ -11,6 +11,8 @@
 #include "mpi.h"
 #include "topology.hpp"
 #include "section.hpp"
+#include "loadBalancer.hpp"
+
 
 /**
 * @brief constructor
@@ -26,6 +28,194 @@ Topology::Topology()
 Topology::~Topology()
 {
 	
+}
+
+/**
+* @brief Construct from the connectivity after load balance
+*/
+void Topology::constructTopology()
+{
+	int rank;
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+	ArrayArray<Label> cell2Node = this->cell2Node_;
+	// if(rank==0)
+	// {
+	// for (int i = 0; i < cell2Node.num; ++i)
+	// {
+	// 	printf("The %dth element: ", i+cellStartId_);
+	// 	for (int j = cell2Node.startIdx[i]; j < cell2Node.startIdx[i+1]; ++j)
+	// 	{
+	// 		printf("%d, ", cell2Node.data[j]);
+	// 	}
+	// 	printf("\n");
+	// }
+	// }
+	Label cellNum = cell2Node.size();
+	Array<Array<Label> > faces2NodesTmp;
+	Array<Array<Label> > cell2Cell(cellNum);
+	for (int i = 0; i < cellNum; ++i)
+	{
+		Label faceNumTmp = Section::facesNumForEle(cellType_[i]);
+		for (int j = 0; j < faceNumTmp; ++j)
+		{
+			Array<Label> face2NodeTmp = Section::faceNodesForEle(
+				&cell2Node.data[cell2Node.startIdx[i]], cellType_[i], j);
+			sort(face2NodeTmp.begin(), face2NodeTmp.end());
+			face2NodeTmp.push_back(i+cellStartId_);
+			faces2NodesTmp.push_back(face2NodeTmp);
+		}
+	}
+	// printf("faceNum: %d, cellNum: %d\n", faces2NodesTmp.size(), cell2Cell.size());
+	/// 对所有面单元进行排序
+	quicksortArray(faces2NodesTmp, 0, faces2NodesTmp.size()-1);
+	/// 由面与node之间关系寻找cell与cell之间关系
+	/// 删除重复的内部面
+	/// 找到面与cell之间关系
+	bool* isInner = new bool[faces2NodesTmp.size()];
+	Array<Array<Label> > face2NodeInn, face2NodeBnd;
+	Array<Array<Label> > face2CellInn, face2CellBnd;
+	Array<Array<Label> > cell2CellArr(cellNum);
+	for (int i = 0; i < faces2NodesTmp.size(); ++i){isInner[i] = false;}
+	for (int i = 0; i < faces2NodesTmp.size(); ++i)
+	{
+		if(isInner[i]) continue;
+		int end = i+1;
+		/// 默认两个面不相等
+		bool isEqual = false;
+		while(end<faces2NodesTmp.size() && 
+			faces2NodesTmp[i][0] == faces2NodesTmp[end][0])
+		{
+			/// 第一个node相等时，默认相等
+			isEqual = true;
+			/// 如果维度不相等，则两个面不相等
+			if(faces2NodesTmp[i].size()!=faces2NodesTmp[end].size())
+			{
+				isEqual = false;
+				break;
+			}
+			/// 比较各个维度，不相等则跳出，标记不相等
+			for (int j = 0; j < faces2NodesTmp[i].size()-1; ++j)
+			{
+				if(faces2NodesTmp[i][j]!=faces2NodesTmp[end][j])
+				{
+					isEqual = false;
+					break;
+				}
+			}
+			if(isEqual)
+			{
+				/// 本面对应cell编号为owner，相等面对应cell编号为neighbor
+				Label ownerId 
+					= faces2NodesTmp[i][faces2NodesTmp[i].size()-1]-cellStartId_;
+				Label neighborId
+					= faces2NodesTmp[end][faces2NodesTmp[end].size()-1]-cellStartId_;
+				cell2CellArr[ownerId].push_back(neighborId);
+				cell2CellArr[neighborId].push_back(ownerId);
+				/// 记录面单元左右cell编号
+				Array<Label> face2CellTmp;
+				face2CellTmp.push_back(ownerId+cellStartId_);
+				face2CellTmp.push_back(neighborId+cellStartId_);
+				face2CellInn.push_back(face2CellTmp);
+				face2NodeInn.push_back(faces2NodesTmp[i]);
+				/// 删除相等面
+				// faces2NodesTmp.erase(end+faces2NodesTmp.begin());
+				isInner[i] = true;
+				isInner[end] = true;
+				// face2CellTmp.push_back(-1);
+				break;
+			}
+			end++;
+		}
+		Label cellId = faces2NodesTmp[i][faces2NodesTmp[i].size()-1];
+		/// 删除面单元中最后一个元素，即cell编号
+		faces2NodesTmp[i].pop_back();
+		/// 记录边界面单元对应cell编号，外部进程单元记-1
+		if(!isEqual)
+		{
+			Array<Label> face2CellTmp;
+			face2CellTmp.push_back(cellId);
+			face2CellTmp.push_back(-1);
+			face2CellBnd.push_back(face2CellTmp);
+			face2NodeBnd.push_back(faces2NodesTmp[i]);
+		}
+	}
+
+	setPatchInfo(face2NodeInn, face2NodeBnd, face2CellInn, face2CellBnd);
+
+	/// localization of cell index
+	for (int i = 0; i < face2CellInn.size(); ++i)
+	{
+		for (int j = 0; j < face2CellInn[i].size(); ++j)
+		{
+			face2CellInn[i][j] -= cellStartId_;
+		}
+	}
+	this->face2Cell_ = transformArray(face2CellInn);
+	this->cell2Cell_ = transformArray(cell2CellArr);
+	this->face2Node_ = transformArray(face2NodeInn);
+}
+
+/*
+* @brief generate the face2Cell topology at the boundary face
+* @param face2NodeInn face-to-node topology, sorted for the first node index at least
+* @param face2NodeBnd face-to-node topology, sorted for the first node index at least
+* @param face2CellInn face-to-cell topology, one-to-one corresponding to the face above
+* @param face2CellBnd
+*/
+void Topology::setPatchInfo(Array<Array<Label> > face2NodeInn,
+	Array<Array<Label> > face2NodeBnd, Array<Array<Label> > face2CellInn,
+	Array<Array<Label> > face2CellBnd)
+{
+	int rank;
+	MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+	Array<Array<Label> > face2CellArr, face2NodeArr;
+	face2CellArr.clear();
+	face2CellArr.insert(face2CellArr.end(), face2CellBnd.begin(), face2CellBnd.end());
+	face2CellArr.insert(face2CellArr.end(), face2CellInn.begin(), face2CellInn.end());
+	// printf("%d, %d, %d\n", face2CellArr.size(), face2CellInn.size(), face2CellBnd.size());
+	face2NodeArr.clear();
+	face2NodeArr.insert(face2NodeArr.end(), face2NodeBnd.begin(), face2NodeBnd.end());
+	face2NodeArr.insert(face2NodeArr.end(), face2NodeInn.begin(), face2NodeInn.end());
+
+	Array<Label> face2CellTmp;
+	for (int i = 0; i < face2CellArr.size(); ++i)
+	{
+		face2CellTmp.push_back(face2CellArr[i][0]);
+		/// 对于内部面，令其为-1
+		if(face2CellArr[i][1]!=-1) face2CellTmp[i] = -1;
+	}
+	ArrayArray<Label> face2NodeBndTmp = transformArray(face2NodeBnd);
+	// if(rank==1)
+	// {
+	// 	for (int i = 0; i < face2NodeBndTmp.size(); ++i)
+	// 	{
+	// 		printf("%d, %d, %d\n", i, face2NodeBndTmp.startIdx[i], face2NodeBndTmp.startIdx[i+1]);
+	// 	}
+	// }
+	Array<Label> face2CellNew;
+	face2CellNew = LoadBalancer::collectNeighborCell(face2NodeBndTmp,
+		face2NodeBnd, face2CellTmp);
+
+	for (int i = 0; i < face2CellNew.size(); ++i)
+	{
+		if(face2CellNew[i]>=0)
+		{
+			Array<Label> face2CellPatchTmp;
+			face2CellPatchTmp.push_back(face2CellArr[i][0]);
+			face2CellPatchTmp.push_back(face2CellNew[i]);
+			face2CellPatch_.push_back(face2CellPatchTmp);
+		}
+	}
+	printf("rank %d, patch: %d\n", rank, face2CellPatch_.size());
+	// if(rank==1)
+	// {
+	// 	for (int i = 0; i < face2CellPatch_.size(); ++i)
+	// 	{
+	// 		printf("The %dth face: %d, %d\n", i, face2CellPatch_[i][0], face2CellPatch_[i][1]);
+	// 	}
+	// }
 }
 
 /**

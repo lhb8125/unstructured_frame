@@ -45,11 +45,6 @@ private:
 	*/
 	Label findMaxRegion(const Array<Scalar> s);
 	/*
-	* @brief collect the neighbor cell index through mpi
-	*/
-	Array<Label> collectNeighborCell(ArrayArray<Label>& bndFaceList,
-		Array<Array<Label> >& bndFaceArr, Array<Label>& face2CellArr);
-	/*
 	* @brief distribute the cells to other processors according to 
 	         the result of PARMETIS
 	*/
@@ -85,6 +80,11 @@ public:
 	* @param reg the collection of regions owned by this processor
 	*/
 	Label* LoadBalancer_3(Array<Region>& reg);
+	/*
+	* @brief collect the neighbor cell index through mpi
+	*/
+	static Array<Label> collectNeighborCell(ArrayArray<Label>& bndFaceList,
+		Array<Array<Label> >& bndFaceArr, Array<Label>& face2CellArr);
 
 	ArrayArray<Label>& getProcId() {return this->procId_;}
 	ArrayArray<Scalar>& getProcLoad() {return this->procLoad_;}
